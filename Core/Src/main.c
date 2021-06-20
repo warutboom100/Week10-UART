@@ -48,6 +48,11 @@ char TxDataBuffer[32] =
 { 0 };
 char RxDataBuffer[32] =
 { 0 };
+int Mode = -1;
+float hzled = 1.0;
+int timestamp = 0;
+int on_off = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,6 +62,7 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void UARTRecieveAndResponsePolling();
 int16_t UARTRecieveIT();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -94,10 +100,11 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  {
-  char temp[]="HELLO WORLD\r\n please type something to test UART\r\n";
+  char temp[]="------MENU------\r\n[0] LED Control\r\n[1] Button Status\r\n" ;
+  char temp1[]="LED Control\r\n[a]Speed up 1hz\r\n[b]Speed down 1hz\r\n[c]On/Off\r\n[x]back\r\n" ;
+  char temp2[]="Button Status\r\n[x]back\r\n" ;
+  char temp3[]="Try again\r\n" ;
   HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
-  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -107,24 +114,85 @@ int main(void)
 		/*Method 1 Polling Mode*/ //bad implement
 
 //		UARTRecieveAndResponsePolling();
-
 		/*Method 2 Interrupt Mode*/
 		HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 32);
 
 		/*Method 2 W/ 1 Char Received*/
-//		int16_t inputchar = UARTRecieveIT();
-//		if(inputchar!=-1)
-//		{
-
-//			sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);
-//			HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
-//		}
-
-
+		int16_t inputchar = UARTRecieveIT();
+		switch(Mode){
+		case -1:
+			switch(inputchar){
+				case -1:
+					break;
+				case 48: //0
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp1, strlen(temp1),10);
+					Mode = 0;
+					break;
+				case 49: //1
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp2, strlen(temp2),10);
+					Mode = 1;
+					break;
+				case 120: //x
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+					Mode = -1;
+					break;
+				default:
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp3, strlen(temp3),10);
+					break;
+			}
+			break;
+		case 0:
+			switch(inputchar){
+				case -1:
+					break;
+				case 97: //a
+					hzled += 1.0;
+					break;
+				case 98: //b
+					if(hzled > 0){
+						hzled -= 1.0;
+					}
+					break;
+				case 99: //c
+					if(on_off == 0){
+						on_off = 1;
+					}
+					else if(on_off == 1){
+						HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+						on_off = 0;
+					}
+					break;
+				case 120: //x
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+					Mode = -1;
+					break;
+				default:
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp3, strlen(temp3),10);
+					break;
+			}
+			break;
+		case 1:
+			if(inputchar!=-1){
+				sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);
+				HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+			}
+			switch(inputchar){
+				case -1:
+					break;
+				case 120: //x
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
+					Mode = -1;
+					break;
+			}
+			break;
+		}
+		if(HAL_GetTick() - timestamp >= (1.0/hzled)*1000.0 && on_off == 1){
+			timestamp = HAL_GetTick();
+			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+		}
 
 		/*This section just simmulate Work Load*/
-		HAL_Delay(100);
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
