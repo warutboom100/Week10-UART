@@ -44,6 +44,7 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+GPIO_PinState Switchz[1];
 char TxDataBuffer[32] =
 { 0 };
 char RxDataBuffer[32] =
@@ -102,8 +103,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   char temp[]="------MENU------\r\n[0] LED Control\r\n[1] Button Status\r\n" ;
   char temp1[]="LED Control\r\n[a]Speed up 1hz\r\n[b]Speed down 1hz\r\n[c]On/Off\r\n[x]back\r\n" ;
-  char temp2[]="Button Status\r\n[x]back\r\n" ;
-  char temp3[]="Try again\r\n" ;
+  char temp2[]="Button1 Status\r\n[x]back\r\n";
+  char temp3[]="Try again\r\n";
+  char temp4[]="Button1pressed\r\n";
   HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
   /* USER CODE END 2 */
 
@@ -169,12 +171,13 @@ int main(void)
 				default:
 					HAL_UART_Transmit(&huart2, (uint8_t*)temp3, strlen(temp3),10);
 					break;
+
 			}
 			break;
 		case 1:
-			if(inputchar!=-1){
-				sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);
-				HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+			Switchz[0] = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
+			if(Switchz[0]== GPIO_PIN_RESET && Switchz[1]== GPIO_PIN_SET){
+				HAL_UART_Transmit(&huart2, (uint8_t*)temp4, strlen(temp4),20);
 			}
 			switch(inputchar){
 				case -1:
@@ -183,14 +186,17 @@ int main(void)
 					HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
 					Mode = -1;
 					break;
+				default:
+					HAL_UART_Transmit(&huart2, (uint8_t*)temp3, strlen(temp3),10);
+					break;
 			}
+			Switchz[1] = Switchz[0];
 			break;
 		}
 		if(HAL_GetTick() - timestamp >= (1.0/hzled)*1000.0 && on_off == 1){
 			timestamp = HAL_GetTick();
 			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 		}
-
 		/*This section just simmulate Work Load*/
 
     /* USER CODE END WHILE */
