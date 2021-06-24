@@ -105,7 +105,8 @@ int main(void)
   char temp1[]="LED Control\r\n[a]Speed up 1hz\r\n[b]Speed down 1hz\r\n[c]On/Off\r\n[x]back\r\n" ;
   char temp2[]="Button1 Status\r\n[x]back\r\n";
   char temp3[]="Try again\r\n";
-  char temp4[]="Button1pressed\r\n";
+  char temp4[]="Button1 Pressed\r\n";
+  char temp5[]="Button1 Unpressed\r\n";
   HAL_UART_Transmit(&huart2, (uint8_t*)temp, strlen(temp),10);
   /* USER CODE END 2 */
 
@@ -177,7 +178,10 @@ int main(void)
 		case 1:
 			Switchz[0] = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
 			if(Switchz[0]== GPIO_PIN_RESET && Switchz[1]== GPIO_PIN_SET){
-				HAL_UART_Transmit(&huart2, (uint8_t*)temp4, strlen(temp4),20);
+				HAL_UART_Transmit(&huart2, (uint8_t*)temp4, strlen(temp4),10);
+			}
+			if(Switchz[0]== GPIO_PIN_SET && Switchz[1]== GPIO_PIN_RESET){
+				HAL_UART_Transmit(&huart2, (uint8_t*)temp5, strlen(temp5),10);
 			}
 			switch(inputchar){
 				case -1:
